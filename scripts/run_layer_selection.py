@@ -33,6 +33,12 @@ def main() -> None:
     lodo.add_argument("--output-csv", required=True)
     lodo.add_argument("--margin", type=float, default=0.01)
     lodo.add_argument("--relative-margin", action="store_true")
+    lodo.add_argument(
+        "--selection-mode",
+        choices=["best", "earliest-on-par"],
+        default="best",
+        help="Use best source-dataset mean for cell type, or earliest-on-par for perturbation.",
+    )
 
     args = parser.parse_args()
     if args.command == "summarize":
@@ -50,7 +56,13 @@ def main() -> None:
             )
         )
     elif args.command == "lodo":
-        df = lodo_layer_selection(args.metrics_csv, args.metric, margin=args.margin, relative_margin=args.relative_margin)
+        df = lodo_layer_selection(
+            args.metrics_csv,
+            args.metric,
+            margin=args.margin,
+            relative_margin=args.relative_margin,
+            selection_mode=args.selection_mode,
+        )
         Path(args.output_csv).parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(args.output_csv, index=False)
 

@@ -121,12 +121,22 @@ python scripts/run_representation_metrics.py \
 Run layer-selection utilities:
 
 ```bash
-python scripts/run_layer_selection.py earliest-on-par \
-  --input-csv outputs/celltype_per_fold.csv \
+python scripts/run_layer_selection.py lodo \
+  --metrics-csv outputs/celltype_metrics_by_dataset.csv \
   --metric macro_f1 \
-  --final-layer 12 \
+  --output-csv outputs/celltype_lodo.csv \
+  --selection-mode best
+
+python scripts/run_layer_selection.py lodo \
+  --metrics-csv outputs/perturbation_metrics_by_dataset.csv \
+  --metric pcc_delta \
+  --output-csv outputs/perturbation_lodo.csv \
+  --selection-mode earliest-on-par \
   --margin 0.01
 ```
+
+Cell-type LODO uses the best source-dataset mean, matching the manuscript;
+perturbation LODO uses the earliest-on-par mode with the prespecified margin.
 
 ## Local Paths And Legacy Extractors
 

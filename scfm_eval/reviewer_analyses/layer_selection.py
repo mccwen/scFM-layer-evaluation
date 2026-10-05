@@ -63,8 +63,20 @@ def lodo_layer_selection(
     final_layer_col: str = "final_layer",
     margin: float = 0.01,
     relative_margin: bool = False,
+    selection_mode: str = "best",
 ) -> pd.DataFrame:
-    """Leave-one-dataset-out layer selection from per-fold layer metrics."""
+    """Leave-one-dataset-out layer selection from per-fold layer metrics.
+
+    ``best`` selects the highest-performing source-dataset mean (or lowest
+    error), resolving ties toward earlier layers. ``earliest-on-par`` selects
+    the earliest layer within the supplied practical margin of the source
+    final-layer mean; this is the perturbation-response mode.
+    """
+    if selection_mode not in {"best", "earliest-on-par"}:
+        raise ValueError(
+            "selection_mode must be 'best' or 'earliest-on-par', "
+            f"got {selection_mode!r}"
+        )
     df = pd.read_csv(metrics_csv)
     required = {dataset_col, model_col, "layer", metric, final_layer_col}
     missing = required - set(df.columns)
@@ -76,22 +88,35 @@ def lodo_layer_selection(
             train = model_df[model_df[dataset_col] != heldout]
             test = model_df[model_df[dataset_col] == heldout]
             final_layer = int(test[final_layer_col].iloc[0])
-            train_summary = train.groupby("layer", as_index=False)[metric].mean()
+            # Give each source dataset equal weight after averaging its folds.
+            train_summary = (
+                train.groupby([dataset_col, "layer"], as_index=False)[metric]
+                .mean()
+                .groupby("layer", as_index=False)[metric]
+                .mean()
+            )
             final_value = float(train_summary.loc[train_summary["layer"] == final_layer, metric].iloc[0])
-            tolerance = abs(final_value) * margin if relative_margin else margin
-            if _metric_direction(metric):
-                eligible = train_summary[train_summary[metric] >= final_value - tolerance]
-                heldout_best = int(test.groupby("layer")[metric].mean().idxmax())
+            if selection_mode == "best":
+                if _metric_direction(metric):
+                    selected = int(train_summary.loc[train_summary[metric].idxmax(), "layer"])
+                else:
+                    selected = int(train_summary.loc[train_summary[metric].idxmin(), "layer"])
             else:
-                eligible = train_summary[train_summary[metric] <= final_value + tolerance]
-                heldout_best = int(test.groupby("layer")[metric].mean().idxmin())
-            selected = int(eligible["layer"].min()) if not eligible.empty else final_layer
+                tolerance = abs(final_value) * margin if relative_margin else margin
+                if _metric_direction(metric):
+                    eligible = train_summary[train_summary[metric] >= final_value - tolerance]
+                else:
+                    eligible = train_summary[train_summary[metric] <= final_value + tolerance]
+                selected = int(eligible["layer"].min()) if not eligible.empty else final_layer
+            heldout_summary = test.groupby("layer", as_index=True)[metric].mean()
+            heldout_best = int(heldout_summary.idxmax() if _metric_direction(metric) else heldout_summary.idxmin())
             heldout_means = test.groupby("layer")[metric].mean()
             rows.append(
                 {
                     "model": model,
                     "heldout_dataset": heldout,
                     "metric": metric,
+                    "selection_mode": selection_mode,
                     "selected_layer": selected,
                     "final_layer": final_layer,
                     "heldout_best_layer": heldout_best,
