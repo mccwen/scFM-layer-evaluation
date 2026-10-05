@@ -35,9 +35,11 @@ Shared perturbation preprocessing is implemented in `scfm_eval/preprocessing/com
 3. Use a log-normalized expression layer when the dataset provides one, e.g. `logNor`; otherwise use the configured expression matrix.
 4. Compute expression deltas relative to matched controls, within context if a context column is present.
 5. Split perturbations, not cells, into a single-seed five-fold CV split balanced by perturbation size.
-6. Fit standardized ridge probes from layer activations to expression deltas
+6. Average activation features and control-relative expression deltas within each
+   non-control perturbation before fitting the multi-output ridge probe.
+7. Fit standardized ridge probes from layer activations to expression deltas
    using a fixed ridge penalty of `1e-4`.
-7. Report PCC-delta, MSE-delta, retrieval metrics, and collapse diagnostics.
+8. Report PCC-delta, MSE-delta, retrieval metrics, and collapse diagnostics.
 
 The optional top-gene evaluation mode selects genes from training perturbations
 within each fold. It never uses held-out target deltas for feature selection.

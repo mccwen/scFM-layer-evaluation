@@ -95,6 +95,22 @@ def _retrieval_metrics(
     }
 
 
+def _aggregate_perturbations(
+    X: np.ndarray,
+    y_delta: np.ndarray,
+    perturbations: np.ndarray,
+    control_label: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Average activations and delta targets once per non-control perturbation."""
+    names = np.asarray(
+        [name for name in pd.unique(perturbations) if name != control_label],
+        dtype=str,
+    )
+    X_mean = np.stack([X[perturbations == name].mean(axis=0) for name in names])
+    y_mean = np.stack([y_delta[perturbations == name].mean(axis=0) for name in names])
+    return X_mean, y_mean, names
+
+
 def run_perturbation_cv_from_activations(
     layer_dir: str | Path,
     h5ad_path: str | Path,
@@ -112,11 +128,12 @@ def run_perturbation_cv_from_activations(
     """Run perturbation-level CV using saved activations and delta targets.
 
     Perturbation conditions, not cells, are assigned to folds. Controls are kept
-    in every training split to define matched expression deltas. The output is a
-    compact per-layer/per-fold metrics table suitable for downstream layer
-    selection analyses. Feature scaling is fit on training cells within each
-    fold. If ``top_deg_k`` is supplied, genes are selected from training
-    perturbations only; held-out targets are never used for feature selection.
+    in every training split to define matched expression deltas. For each fold,
+    cell activations and cell-level deltas are averaged within each non-control
+    perturbation before fitting multi-output ridge regression. Feature scaling
+    is fit on the resulting training-perturbation means only. If ``top_deg_k``
+    is supplied, genes are selected from training perturbation means only;
+    held-out targets are never used for feature selection.
     """
     adata = sc.read_h5ad(h5ad_path)
     if perturbation_key not in adata.obs:
@@ -136,30 +153,31 @@ def run_perturbation_cv_from_activations(
         X = align_activation_rows(X_full, keep_idx, adata.n_obs, adata.n_obs, layer_id)
         for fold, heldout_perts in enumerate(folds, start=1):
             test_mask = np.isin(perturb, heldout_perts)
-            train_mask = ~test_mask
-            train_mask = train_mask | (perturb == control_label)
+            train_mask = (~test_mask) & (perturb != control_label)
             eval_mask = test_mask & (perturb != control_label)
-            if eval_mask.sum() == 0:
+            if train_mask.sum() == 0 or eval_mask.sum() == 0:
                 continue
-            X_train = X[train_mask]
-            X_eval = X[eval_mask]
+            X_train, y_train, train_names = _aggregate_perturbations(
+                X[train_mask], y_delta[train_mask], perturb[train_mask], control_label
+            )
+            X_eval, truth, eval_names = _aggregate_perturbations(
+                X[eval_mask], y_delta[eval_mask], perturb[eval_mask], control_label
+            )
             if standardize_features:
                 scaler = StandardScaler()
                 X_train = scaler.fit_transform(X_train)
                 X_eval = scaler.transform(X_eval)
             model = Ridge(alpha=alpha)
-            model.fit(X_train, y_delta[train_mask])
+            model.fit(X_train, y_train)
             pred = model.predict(X_eval)
-            truth = y_delta[eval_mask]
             if top_deg_k is not None:
-                training_perturbations = train_mask & (perturb != control_label)
-                cols = _top_delta_genes(y_delta[training_perturbations], top_deg_k)
+                cols = _top_delta_genes(y_train, top_deg_k)
                 pred_eval = pred[:, cols]
                 truth_eval = truth[:, cols]
             else:
                 pred_eval = pred
                 truth_eval = truth
-            retrieval = _retrieval_metrics(pred_eval, truth_eval, perturb[eval_mask])
+            retrieval = _retrieval_metrics(pred_eval, truth_eval, eval_names)
             rows.append(
                 {
                     "layer": layer_id,
@@ -167,8 +185,10 @@ def run_perturbation_cv_from_activations(
                     "heldout_perturbations": ";".join(map(str, heldout_perts)),
                     "mse_delta": mean_squared_error(truth_eval, pred_eval),
                     "pcc_delta": _safe_pearson(truth_eval, pred_eval),
-                    "n_train": int(train_mask.sum()),
-                    "n_test": int(eval_mask.sum()),
+                    "n_train": int(len(train_names)),
+                    "n_test": int(len(eval_names)),
+                    "n_train_cells": int(train_mask.sum()),
+                    "n_test_cells": int(eval_mask.sum()),
                     "control_label": control_label,
                     "alpha": alpha,
                     "standardize_features": standardize_features,

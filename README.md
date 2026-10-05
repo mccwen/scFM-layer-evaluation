@@ -98,7 +98,8 @@ python scripts/run_perturbation_probe.py \
   --output-csv outputs/perturbation_per_fold.csv
 ```
 
-The perturbation probe standardizes activation features using training-fold
+The perturbation probe first averages cells within each perturbation, then
+standardizes the resulting activation features using training-fold
 statistics, uses ridge penalty `1e-4`, and reports PCC-delta, MSE-delta,
 perturbation retrieval, and collapse diagnostics. Optional gene selection is
 performed from training perturbations only; it is disabled by default.
