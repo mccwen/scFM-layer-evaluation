@@ -41,6 +41,10 @@ Shared perturbation preprocessing is implemented in `scfm_eval/preprocessing/com
 
 The optional top-gene evaluation mode selects genes from training perturbations
 within each fold. It never uses held-out target deltas for feature selection.
+Collapse diagnostics include predicted/observed variance and mean pairwise
+Euclidean-distance ratios, together with the fraction of unique top-1 retrieval
+assignments; a ratio below `0.10` or severe assignment concentration triggers
+the conservative collapse warning.
 
 ## Model-specific preprocessing notes
 

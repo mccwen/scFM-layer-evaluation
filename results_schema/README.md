@@ -35,8 +35,9 @@ Required columns:
 - `retrieval_top1`: top-1 perturbation retrieval accuracy within the held-out fold.
 - `retrieval_mrr`: mean reciprocal rank within the held-out fold.
 - `predicted_observed_variance_ratio`: predicted/observed cell-level variance ratio.
+- `predicted_observed_pairwise_distance_ratio`: predicted/observed mean Euclidean distance ratio between held-out perturbation delta means.
 - `unique_top1_fraction`: fraction of unique observed perturbations assigned by top-1 retrieval.
-- `collapse_warning`: conservative collapse flag from variance and retrieval diagnostics.
+- `collapse_warning`: conservative collapse flag from variance, pairwise-distance, and retrieval diagnostics.
 
 ## Representation Metrics CSV
 

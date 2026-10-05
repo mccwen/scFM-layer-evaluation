@@ -58,18 +58,38 @@ def _retrieval_metrics(
     pred_var = float(np.var(predicted, axis=0).mean())
     truth_var = float(np.var(truth, axis=0).mean())
     variance_ratio = pred_var / truth_var if truth_var > 0 else float("nan")
+    if len(names) >= 2:
+        pred_pairwise = np.linalg.norm(
+            pred_means[:, None, :] - pred_means[None, :, :], axis=2
+        )
+        truth_pairwise = np.linalg.norm(
+            truth_means[:, None, :] - truth_means[None, :, :], axis=2
+        )
+        upper = np.triu(np.ones(pred_pairwise.shape, dtype=bool), k=1)
+        pred_distance = float(pred_pairwise[upper].mean())
+        truth_distance = float(truth_pairwise[upper].mean())
+        pairwise_distance_ratio = (
+            pred_distance / truth_distance if truth_distance > 0 else float("nan")
+        )
+    else:
+        pairwise_distance_ratio = float("nan")
     unique_top1_fraction = float(
         np.unique(np.argmax(np.nan_to_num(similarity, nan=-np.inf), axis=1)).size
         / len(names)
     )
     collapse_warning = bool(
         (np.isfinite(variance_ratio) and variance_ratio < 0.10)
+        or (
+            np.isfinite(pairwise_distance_ratio)
+            and pairwise_distance_ratio < 0.10
+        )
         or unique_top1_fraction < 0.25
     )
     return {
         "retrieval_top1": float(np.mean(top1)),
         "retrieval_mrr": float(np.mean(reciprocal_rank)),
         "predicted_observed_variance_ratio": variance_ratio,
+        "predicted_observed_pairwise_distance_ratio": pairwise_distance_ratio,
         "unique_top1_fraction": unique_top1_fraction,
         "collapse_warning": collapse_warning,
     }
