@@ -55,8 +55,8 @@ def _retrieval_metrics(
         top1.append(rank == 1)
         reciprocal_rank.append(1.0 / rank)
 
-    pred_var = float(np.var(predicted, axis=0).mean())
-    truth_var = float(np.var(truth, axis=0).mean())
+    pred_var = float(np.var(pred_means, axis=0).mean())
+    truth_var = float(np.var(truth_means, axis=0).mean())
     variance_ratio = pred_var / truth_var if truth_var > 0 else float("nan")
     if len(names) >= 2:
         pred_pairwise = np.linalg.norm(
