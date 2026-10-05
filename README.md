@@ -81,6 +81,7 @@ python scripts/run_celltype_probe.py \
   --layer-dir /path/to/saved/layer_activations \
   --h5ad /path/to/dataset.h5ad \
   --label-key "Cell type" \
+  --min-cells-per-class 15 \
   --output-csv outputs/celltype_per_fold.csv
 ```
 
@@ -131,8 +132,9 @@ python scripts/run_layer_selection.py earliest-on-par \
 The files under `cell_type_extraction/` and `perturbation_extraction/` preserve
 model-faithful, dataset-specific extraction workflows from the original analyses.
 They are not intended to download data or checkpoints automatically. Provide
-local paths through the documented configuration or environment variables; never
-commit private filesystem paths, datasets, checkpoints, or generated outputs.
+local paths through each script's arguments or documented environment variables;
+the JSON configs are reference templates rather than an automatic config loader.
+Never commit private filesystem paths, datasets, checkpoints, or generated outputs.
 
 Each extraction directory now has one dispatcher per model and one pipeline per
 dataset. For example:
