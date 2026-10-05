@@ -30,6 +30,13 @@ Required columns:
 - `n_train`: number of training cells, including controls.
 - `n_test`: number of held-out non-control cells.
 - `control_label`: control condition label used to compute deltas.
+- `alpha`: ridge penalty used for the fold.
+- `standardize_features`: whether training-fold activation scaling was used.
+- `retrieval_top1`: top-1 perturbation retrieval accuracy within the held-out fold.
+- `retrieval_mrr`: mean reciprocal rank within the held-out fold.
+- `predicted_observed_variance_ratio`: predicted/observed cell-level variance ratio.
+- `unique_top1_fraction`: fraction of unique observed perturbations assigned by top-1 retrieval.
+- `collapse_warning`: conservative collapse flag from variance and retrieval diagnostics.
 
 ## Representation Metrics CSV
 

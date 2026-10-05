@@ -16,7 +16,7 @@ from scfm_eval.io import align_activation_rows, load_layer_activations
 def load_cell_type_labels(
     h5ad_path: str | Path,
     label_key: str,
-    min_cells_per_class: int = 5,
+    min_cells_per_class: int = 15,
     max_cells: int | None = None,
     seed: int = 42,
 ) -> tuple[np.ndarray, np.ndarray, int]:
@@ -39,7 +39,7 @@ def run_cell_type_cv_from_activations(
     h5ad_path: str | Path,
     label_key: str,
     output_csv: str | Path,
-    min_cells_per_class: int = 5,
+    min_cells_per_class: int = 15,
     n_splits: int = 5,
     seed: int = 42,
     max_cells: int | None = None,

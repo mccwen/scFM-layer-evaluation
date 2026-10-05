@@ -24,6 +24,9 @@ analysis = [
   "dadapy",
   "repitl",
 ]
+test = [
+  "pytest>=8",
+]
 extraction = [
   "tqdm",
   "mygene",

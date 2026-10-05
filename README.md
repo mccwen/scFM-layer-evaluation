@@ -63,12 +63,16 @@ Model-specific extraction dependencies are intentionally optional because the
 four scFMs have different upstream installation requirements. See
 `docs/datasets_and_preprocessing.md` before installing the relevant model package.
 
-Copy example configs and edit local paths:
+Copy the example configs if you want a record of local paths and run settings:
 
 ```bash
 cp configs/dataset_catalog.example.json configs/dataset_catalog.local.json
 cp configs/pipeline.example.json configs/pipeline.local.json
 ```
+
+These JSON files are reference templates and provenance records; the reusable
+CLI entry points currently receive their paths and settings explicitly through
+command-line arguments.
 
 Run a cell-type probe from saved layer activations:
 
@@ -92,6 +96,11 @@ python scripts/run_perturbation_probe.py \
   --expression-layer logNor \
   --output-csv outputs/perturbation_per_fold.csv
 ```
+
+The perturbation probe standardizes activation features using training-fold
+statistics, uses ridge penalty `1e-4`, and reports PCC-delta, MSE-delta,
+perturbation retrieval, and collapse diagnostics. Optional gene selection is
+performed from training perturbations only; it is disabled by default.
 
 Compute representation quality metrics or CKA:
 
@@ -149,9 +158,11 @@ and accept all input and output paths explicitly.
 ## Dataset Provenance And Preprocessing
 
 See `docs/datasets_and_preprocessing.md` and
-`configs/dataset_catalog.example.json`. Preprocessing details are encoded both in
-documentation and in `scfm_eval/preprocessing/common.py` so pipeline behavior is
-not hidden in manuscript text.
+`configs/dataset_catalog.example.json`. Extraction-time preprocessing details
+are encoded both in documentation and in `scfm_eval/preprocessing/common.py`.
+The reusable probing CLIs expect saved activations and labels to already reflect
+the same extraction-time QC and alignment; they do not silently re-filter genes
+or cells after activation extraction.
 
 ## Relationship To Historical Scripts
 

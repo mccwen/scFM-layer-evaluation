@@ -8,6 +8,7 @@ import scanpy as sc
 from scipy.stats import pearsonr
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import StandardScaler
 
 from scfm_eval.io import align_activation_rows, load_layer_activations
 from scfm_eval.preprocessing.common import (
@@ -31,6 +32,49 @@ def _top_delta_genes(y_true: np.ndarray, k: int) -> np.ndarray:
     return np.argsort(np.abs(delta))[::-1][: min(k, delta.size)]
 
 
+def _retrieval_metrics(
+    predicted: np.ndarray,
+    truth: np.ndarray,
+    perturbations: np.ndarray,
+) -> dict[str, float | bool]:
+    """Compute held-out perturbation retrieval and collapse diagnostics."""
+    names = np.unique(perturbations)
+    pred_means = np.stack([predicted[perturbations == name].mean(axis=0) for name in names])
+    truth_means = np.stack([truth[perturbations == name].mean(axis=0) for name in names])
+    similarity = np.full((len(names), len(names)), np.nan, dtype=float)
+    for i in range(len(names)):
+        for j in range(len(names)):
+            similarity[i, j] = _safe_pearson(pred_means[i], truth_means[j])
+
+    top1 = []
+    reciprocal_rank = []
+    for i in range(len(names)):
+        scores = np.nan_to_num(similarity[i], nan=-np.inf)
+        order = np.argsort(-scores, kind="stable")
+        rank = int(np.flatnonzero(order == i)[0]) + 1
+        top1.append(rank == 1)
+        reciprocal_rank.append(1.0 / rank)
+
+    pred_var = float(np.var(predicted, axis=0).mean())
+    truth_var = float(np.var(truth, axis=0).mean())
+    variance_ratio = pred_var / truth_var if truth_var > 0 else float("nan")
+    unique_top1_fraction = float(
+        np.unique(np.argmax(np.nan_to_num(similarity, nan=-np.inf), axis=1)).size
+        / len(names)
+    )
+    collapse_warning = bool(
+        (np.isfinite(variance_ratio) and variance_ratio < 0.10)
+        or unique_top1_fraction < 0.25
+    )
+    return {
+        "retrieval_top1": float(np.mean(top1)),
+        "retrieval_mrr": float(np.mean(reciprocal_rank)),
+        "predicted_observed_variance_ratio": variance_ratio,
+        "unique_top1_fraction": unique_top1_fraction,
+        "collapse_warning": collapse_warning,
+    }
+
+
 def run_perturbation_cv_from_activations(
     layer_dir: str | Path,
     h5ad_path: str | Path,
@@ -41,15 +85,18 @@ def run_perturbation_cv_from_activations(
     expression_layer: str | None = None,
     n_splits: int = 5,
     seed: int = 42,
-    alpha: float = 1.0,
-    top_deg_k: int | None = 100,
+    alpha: float = 1e-4,
+    top_deg_k: int | None = None,
+    standardize_features: bool = True,
 ) -> pd.DataFrame:
     """Run perturbation-level CV using saved activations and delta targets.
 
     Perturbation conditions, not cells, are assigned to folds. Controls are kept
     in every training split to define matched expression deltas. The output is a
     compact per-layer/per-fold metrics table suitable for downstream layer
-    selection analyses.
+    selection analyses. Feature scaling is fit on training cells within each
+    fold. If ``top_deg_k`` is supplied, genes are selected from training
+    perturbations only; held-out targets are never used for feature selection.
     """
     adata = sc.read_h5ad(h5ad_path)
     if perturbation_key not in adata.obs:
@@ -74,17 +121,25 @@ def run_perturbation_cv_from_activations(
             eval_mask = test_mask & (perturb != control_label)
             if eval_mask.sum() == 0:
                 continue
+            X_train = X[train_mask]
+            X_eval = X[eval_mask]
+            if standardize_features:
+                scaler = StandardScaler()
+                X_train = scaler.fit_transform(X_train)
+                X_eval = scaler.transform(X_eval)
             model = Ridge(alpha=alpha)
-            model.fit(X[train_mask], y_delta[train_mask])
-            pred = model.predict(X[eval_mask])
+            model.fit(X_train, y_delta[train_mask])
+            pred = model.predict(X_eval)
             truth = y_delta[eval_mask]
             if top_deg_k is not None:
-                cols = _top_delta_genes(truth, top_deg_k)
+                training_perturbations = train_mask & (perturb != control_label)
+                cols = _top_delta_genes(y_delta[training_perturbations], top_deg_k)
                 pred_eval = pred[:, cols]
                 truth_eval = truth[:, cols]
             else:
                 pred_eval = pred
                 truth_eval = truth
+            retrieval = _retrieval_metrics(pred_eval, truth_eval, perturb[eval_mask])
             rows.append(
                 {
                     "layer": layer_id,
@@ -95,6 +150,9 @@ def run_perturbation_cv_from_activations(
                     "n_train": int(train_mask.sum()),
                     "n_test": int(eval_mask.sum()),
                     "control_label": control_label,
+                    "alpha": alpha,
+                    "standardize_features": standardize_features,
+                    **retrieval,
                 }
             )
     result = pd.DataFrame(rows).sort_values(["layer", "fold"])

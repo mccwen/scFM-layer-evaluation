@@ -14,7 +14,7 @@ Then edit `local_path` fields to point to your `.h5ad` files. The example catalo
 
 ## Cell-type classification preprocessing
 
-Shared preprocessing is implemented in `scfm_eval/preprocessing/common.py`:
+Extraction-time shared preprocessing is implemented in `scfm_eval/preprocessing/common.py`:
 
 1. Read the `.h5ad` file.
 2. Verify the cell-type label column from the dataset catalog.
@@ -35,8 +35,12 @@ Shared perturbation preprocessing is implemented in `scfm_eval/preprocessing/com
 3. Use a log-normalized expression layer when the dataset provides one, e.g. `logNor`; otherwise use the configured expression matrix.
 4. Compute expression deltas relative to matched controls, within context if a context column is present.
 5. Split perturbations, not cells, into a single-seed five-fold CV split balanced by perturbation size.
-6. Fit standardized ridge probes from layer activations to expression deltas.
+6. Fit standardized ridge probes from layer activations to expression deltas
+   using a fixed ridge penalty of `1e-4`.
 7. Report PCC-delta, MSE-delta, retrieval metrics, and collapse diagnostics.
+
+The optional top-gene evaluation mode selects genes from training perturbations
+within each fold. It never uses held-out target deltas for feature selection.
 
 ## Model-specific preprocessing notes
 

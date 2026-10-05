@@ -17,8 +17,25 @@ def main() -> None:
     parser.add_argument("--expression-layer", default=None)
     parser.add_argument("--n-splits", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--alpha", type=float, default=1.0)
-    parser.add_argument("--top-deg-k", type=int, default=100)
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=1e-4,
+        help="Ridge penalty; manuscript default is 1e-4.",
+    )
+    parser.add_argument(
+        "--top-deg-k",
+        type=int,
+        default=None,
+        help="Optional number of genes selected from training perturbations only.",
+    )
+    parser.add_argument(
+        "--no-standardize-features",
+        dest="standardize_features",
+        action="store_false",
+        help="Disable training-fold feature standardization.",
+    )
+    parser.set_defaults(standardize_features=True)
     args = parser.parse_args()
     run_perturbation_cv_from_activations(**vars(args))
 

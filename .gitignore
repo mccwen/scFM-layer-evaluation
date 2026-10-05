@@ -50,6 +50,8 @@ tables/
 
 # Local environments and notebook/runtime noise.
 scgpt_env/
+build/
+*.egg-info/
 __pycache__/
 .ipynb_checkpoints/
 *.pyc
