@@ -17,4 +17,4 @@ jobs:
       - name: Run repository smoke tests
         run: python -m pytest -q
       - name: Build package metadata
-        run: python -m build --wheel --no-isolation
+        run: python -m build --wheel
