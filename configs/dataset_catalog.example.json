@@ -1,0 +1,116 @@
+{
+  "schema_version": "0.1.0",
+  "notes": "This catalog records dataset provenance and preprocessing used in the layer-wise scFM evaluation. Raw h5ad files and checkpoints are not distributed with the repo; provide local paths in a copy of this file.",
+  "datasets": {
+    "pbmc3k": {
+      "task": "cell_type_classification",
+      "source_name": "10x Genomics 3k PBMCs from a Healthy Donor",
+      "source_url": "https://www.10xgenomics.com/datasets/3-k-pbm-cs-from-a-healthy-donor-1-standard-1-1-0",
+      "reference": "10x Genomics, 2016",
+      "local_path": "data/cell_type/pbmc3k.h5ad",
+      "obs": {"label_key": "cell_type"},
+      "preprocessing": {
+        "input_layer": "raw_counts_or_X",
+        "min_genes_per_cell": 200,
+        "min_cells_per_gene": 3,
+        "min_cells_per_class": 15,
+        "normalization": "model_specific",
+        "notes": "Use raw counts for tokenization/extraction unless the model-specific script documents otherwise. Filter rare classes before stratified CV."
+      }
+    },
+    "zheng68k": {
+      "task": "cell_type_classification",
+      "source_name": "Zheng68k PBMC",
+      "source_url": "https://www.nature.com/articles/ncomms14049",
+      "reference": "Zheng et al., Nature Communications 2017",
+      "local_path": "data/cell_type/Zheng68k_pmbc.merged.h5ad",
+      "obs": {"label_key": "Cell type"},
+      "preprocessing": {
+        "input_layer": "raw_counts_or_X",
+        "min_genes_per_cell": 200,
+        "min_cells_per_gene": 3,
+        "min_cells_per_class": 15,
+        "normalization": "model_specific",
+        "notes": "Some local Zheng68k files use 'Cell type' instead of 'cell_type'; set label_key explicitly."
+      }
+    },
+    "czi_meninges_immune": {
+      "task": "cell_type_classification",
+      "source_name": "Comprehensive cellular and spatial atlas of the developing human meninges, immune-cell subset",
+      "source_url": "https://cellxgene.cziscience.com/collections/7d66d871-091f-4602-9f42-85f86d2853e0",
+      "reference": "Degenhard et al., Nature Communications 2024; CZ CELLxGENE Discover",
+      "local_path": "data/cell_type/CZI_human_embryonic_meninges_at5-13_weeks_post_conception_immune_cells.h5ad",
+      "obs": {"label_key": "cell_type"},
+      "preprocessing": {
+        "input_layer": "raw_counts_or_X",
+        "min_genes_per_cell": 200,
+        "min_cells_per_gene": 3,
+        "min_cells_per_class": 15,
+        "normalization": "model_specific",
+        "notes": "Use the immune-cell subset h5ad used in the manuscript."
+      }
+    },
+    "tabula_sapiens_testis": {
+      "task": "cell_type_classification",
+      "source_name": "Tabula Sapiens testis tissue subset",
+      "source_url": "https://tabula-sapiens.sf.czbiohub.org/organs",
+      "reference": "Tabula Sapiens Consortium, Science 2022",
+      "local_path": "data/cell_type/Tabula_Sapiens_testis.h5ad",
+      "obs": {"label_key": "cell_type"},
+      "preprocessing": {
+        "input_layer": "raw_counts_or_X",
+        "min_genes_per_cell": 200,
+        "min_cells_per_gene": 3,
+        "min_cells_per_class": 15,
+        "normalization": "model_specific",
+        "notes": "Use the testis subset and retain cell types with sufficient support for five-fold CV."
+      }
+    },
+    "wessels": {
+      "task": "perturbation_response_prediction",
+      "source_name": "Cas13d RNA-targeting perturbation screen",
+      "source_url": "https://www.nature.com/articles/s41587-023-01970-1",
+      "reference": "Wessels et al., Nature Biotechnology 2024",
+      "local_path": "data/perturbation/Wessels.h5ad",
+      "obs": {"perturbation_key": "perturbation", "control_label": "control", "context_key": null},
+      "preprocessing": {
+        "expression_layer": "logNor_or_X",
+        "min_cells_per_perturbation": 25,
+        "folding": "single-seed five-fold split at perturbation level, stratified by perturbation size",
+        "target": "mean expression delta relative to matched controls",
+        "normalization": "standardized ridge probe with training-fold-only scaling"
+      }
+    },
+    "schmidt": {
+      "task": "perturbation_response_prediction",
+      "source_name": "CRISPR activation/interference T-cell perturbation screens",
+      "source_url": "https://www.science.org/doi/10.1126/science.abj4008",
+      "reference": "Schmidt et al., Science 2022",
+      "local_path": "data/perturbation/Schmidt.h5ad",
+      "obs": {"perturbation_key": "perturbation", "control_label": "control", "context_key": null},
+      "preprocessing": {
+        "expression_layer": "logNor_or_X",
+        "min_cells_per_perturbation": 25,
+        "folding": "single-seed five-fold split at perturbation level, stratified by perturbation size",
+        "target": "mean expression delta relative to matched controls",
+        "normalization": "standardized ridge probe with training-fold-only scaling"
+      }
+    },
+    "sciplex3": {
+      "task": "perturbation_response_prediction",
+      "source_name": "sciPlex3-comb chemical transcriptomics",
+      "source_url": "https://www.science.org/doi/10.1126/science.aax6234",
+      "reference": "Srivatsan et al., Science 2020",
+      "local_path": "data/perturbation/SciPlex.h5ad",
+      "obs": {"perturbation_key": "perturbation", "control_label": "control", "context_key": null},
+      "preprocessing": {
+        "expression_layer": "X_or_log_normalized_layer",
+        "min_cells_per_perturbation": 25,
+        "folding": "single-seed five-fold split at perturbation level, stratified by perturbation size",
+        "target": "mean expression delta relative to matched controls",
+        "normalization": "standardized ridge probe with training-fold-only scaling",
+        "notes": "If genes are Ensembl IDs, convert to gene symbols or provide the model-specific gene-id column."
+      }
+    }
+  }
+}

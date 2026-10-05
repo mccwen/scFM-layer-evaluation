@@ -1,0 +1,14 @@
+numpy
+pandas
+scipy
+scanpy
+anndata
+torch
+tqdm
+
+# Model-specific extras
+scgpt
+performer-pytorch
+geneformer
+transformers
+datasets

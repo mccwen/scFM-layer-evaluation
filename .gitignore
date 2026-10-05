@@ -1,0 +1,56 @@
+.DS_Store
+
+# Local environment and cluster configuration
+.env.local
+*.out
+*.err
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Large local artifacts
+/data/
+/outputs/
+/checkpoints/
+*.h5ad
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.parquet
+# Local configs with private paths
+configs/*.local.json
+# OS/editor noise
+.ipynb_checkpoints/
+
+# Data, activations, checkpoints, and generated results are intentionally external.
+*.h5ad
+*.loom
+*.mtx
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.npy
+*.npz
+*.pkl
+*.csv
+*.tsv
+*.parquet
+*.feather
+outputs/
+results/
+figures/
+tables/
+
+# Local environments and notebook/runtime noise.
+scgpt_env/
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+.DS_Store

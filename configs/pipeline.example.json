@@ -1,0 +1,46 @@
+{
+  "seed": 42,
+  "device": "cuda",
+  "dataset_catalog": "configs/dataset_catalog.example.json",
+  "output_root": "outputs",
+  "models": {
+    "scgpt": {
+      "checkpoint_dir": "/path/to/scGPT_human",
+      "readout": "cls",
+      "batch_size": 32
+    },
+    "scbert": {
+      "checkpoint_dir": "/path/to/scbert_checkpoint",
+      "readout": "masked_mean",
+      "batch_size": 32
+    },
+    "geneformer": {
+      "checkpoint_dir": "/path/to/geneformer_checkpoint_or_model_name",
+      "readout": "masked_mean",
+      "batch_size": 32
+    },
+    "scfoundation": {
+      "checkpoint_dir": "/path/to/scfoundation_checkpoint",
+      "readout": "default_pool_type_all",
+      "batch_size": 32
+    }
+  },
+  "evaluation": {
+    "cell_type": {
+      "n_splits": 5,
+      "classifier": "logistic_regression",
+      "metrics": ["accuracy", "macro_f1"]
+    },
+    "perturbation": {
+      "n_splits": 5,
+      "probe": "ridge_regression",
+      "metrics": ["pcc_delta", "mse_delta", "retrieval_top1", "retrieval_mrr", "collapse_diagnostics"]
+    },
+    "layer_selection": {
+      "cell_type": "leave_one_dataset_out_macro_f1",
+      "perturbation": "leave_one_dataset_out_earliest_on_par",
+      "pcc_delta_margin": 0.01,
+      "mse_delta_relative_margin": 0.05
+    }
+  }
+}
